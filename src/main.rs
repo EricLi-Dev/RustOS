@@ -3,6 +3,8 @@
 
 use core::panic::PanicInfo; // imports the PanicInfo struct.
 
+static HELLO: &[u8] = b"Hello World!";
+
 // This function is called on panic.
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
@@ -11,7 +13,18 @@ fn panic(_info: &PanicInfo) -> ! {
 
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn _start() -> ! {
-    // this function is the entry point, since the linker looks for a function
-    // named `_start` by default
+    let vga_buffer = 0xb8000 as *mut u8; // raw mutable pointer to the mem. addr.
+
+    // &byte: dereference the &u8 byte to get the actual u8 value
+    for (i, &byte) in HELLO.iter().enumerate() {
+        unsafe {
+            // write the string byte and corresponding color byte
+            // to the correct offset i away
+            // multiply by 2 to correctly address the byte pair
+            *vga_buffer.offset(i as isize * 2) = byte;
+            *vga_buffer.offset(i as isize * 2 + 1) = 0xb;
+        }
+    }
+
     loop {}
 }
